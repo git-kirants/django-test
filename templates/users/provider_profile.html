@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
+    <h2 class="text-2xl font-bold mb-6">Complete Your Provider Profile</h2>
+    
+    <form method="post" enctype="multipart/form-data" class="space-y-6">
+        {% csrf_token %}
+        
+        <!-- Business License -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700">
+                Business License
+            </label>
+            {{ form.business_license }}
+            {% if form.business_license.errors %}
+            <p class="text-red-500 text-sm mt-1">
+                {{ form.business_license.errors.0 }}
+            </p>
+            {% endif %}
+        </div>
+
+        <!-- Insurance Information -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700">
+                Insurance Information
+            </label>
+            {{ form.insurance_info }}
+            {% if form.insurance_info.errors %}
+            <p class="text-red-500 text-sm mt-1">
+                {{ form.insurance_info.errors.0 }}
+            </p>
+            {% endif %}
+        </div>
+
+        <!-- Service Area -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700">
+                Service Radius (km)
+            </label>
+            {{ form.service_radius }}
+            {% if form.service_radius.errors %}
+            <p class="text-red-500 text-sm mt-1">
+                {{ form.service_radius.errors.0 }}
+            </p>
+            {% endif %}
+        </div>
+
+        <!-- Availability -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                Available Days
+            </label>
+            <div class="space-y-2">
+                {{ form.available_days }}
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">
+                    Start Time
+                </label>
+                {{ form.start_time }}
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">
+                    End Time
+                </label>
+                {{ form.end_time }}
+            </div>
+        </div>
+
+        <!-- Specialties -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                Specialties
+            </label>
+            <div class="space-y-2">
+                {{ form.specialties }}
+            </div>
+        </div>
+
+        <button type="submit" 
+                class="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">
+            Save Profile
+        </button>
+    </form>
+</div>
+{% endblock %} 

@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="bg-green-50 py-16">
+    <div class="container mx-auto px-4">
+        <div class="max-w-4xl mx-auto text-center">
+            <h1 class="text-4xl md:text-5xl font-bold text-green-800 mb-6">
+                Find Your Perfect Garden Service
+            </h1>
+            <p class="text-xl text-gray-600 mb-8">
+                Connect with professional gardeners and transform your outdoor space
+            </p>
+            {% if not user.is_authenticated %}
+            <div class="space-x-4">
+                <a href="{% url 'users:register' %}" 
+                   class="inline-block bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors">
+                    Get Started
+                </a>
+                <a href="{% url 'services:list' %}" 
+                   class="inline-block bg-white text-green-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors">
+                    Browse Services
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="container mx-auto px-4 py-12">
+    {% if user.is_authenticated %}
+        {% if user.role == 'PROVIDER' %}
+            <!-- Provider Dashboard Preview -->
+            <div class="grid md:grid-cols-2 gap-8 mb-12">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-semibold text-green-700 mb-4">Provider Dashboard</h2>
+                    <div class="space-y-4">
+                        <a href="{% url 'services:create' %}" 
+                           class="block w-full bg-green-500 text-white text-center py-3 px-4 rounded-lg hover:bg-green-600 transition-colors">
+                            Add New Service
+                        </a>
+                        <a href="{% url 'services:list' %}" 
+                           class="block w-full bg-blue-500 text-white text-center py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors">
+                            Manage Services
+                        </a>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-semibold text-green-700 mb-4">Quick Stats</h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="text-center p-4 bg-green-50 rounded-lg">
+                            <p class="text-3xl font-bold text-green-600">{{ total_services|default:0 }}</p>
+                            <p class="text-gray-600">Active Services</p>
+                        </div>
+                        <div class="text-center p-4 bg-blue-50 rounded-lg">
+                            <p class="text-3xl font-bold text-blue-600">{{ total_bookings|default:0 }}</p>
+                            <p class="text-gray-600">Total Bookings</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <!-- Customer Dashboard Preview -->
+            <div class="grid md:grid-cols-2 gap-8 mb-12">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-semibold text-green-700 mb-4">Find Services</h2>
+                    <div class="space-y-4">
+                        <a href="{% url 'services:list' %}" 
+                           class="block w-full bg-green-500 text-white text-center py-3 px-4 rounded-lg hover:bg-green-600 transition-colors">
+                            Browse Services
+                        </a>
+                        <a href="#" 
+                           class="block w-full bg-blue-500 text-white text-center py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors">
+                            My Bookings
+                        </a>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-semibold text-green-700 mb-4">Recent Services</h2>
+                    <div class="space-y-4">
+                        {% for service in recent_services|slice:":3" %}
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h3 class="font-semibold">{{ service.title }}</h3>
+                            <p class="text-gray-600">{{ service.description|truncatechars:100 }}</p>
+                        </div>
+                        {% empty %}
+                        <p class="text-gray-500">No recent services available.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
+
+    <!-- Features Section -->
+    <div class="grid md:grid-cols-3 gap-8 mb-12">
+        <div class="bg-white p-6 rounded-lg shadow-md text-center">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Verified Professionals</h3>
+            <p class="text-gray-600">All our gardeners are thoroughly vetted and approved</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md text-center">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Easy Booking</h3>
+            <p class="text-gray-600">Book services with just a few clicks</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md text-center">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M5 13l4 4L19 7"/>
+                </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Quality Guaranteed</h3>
+            <p class="text-gray-600">Satisfaction guaranteed on all services</p>
+        </div>
+    </div>
+
+    <!-- CTA Section -->
+    <div class="bg-green-600 text-white rounded-lg p-8 text-center">
+        <h2 class="text-3xl font-bold mb-4">Ready to Get Started?</h2>
+        <p class="text-xl mb-6">Join our community of garden enthusiasts today</p>
+        {% if not user.is_authenticated %}
+        <div class="space-x-4">
+            <a href="{% url 'users:register' %}" 
+               class="inline-block bg-white text-green-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                Sign Up Now
+            </a>
+            <a href="{% url 'users:provider_register' %}" 
+               class="inline-block border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors">
+                Become a Provider
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

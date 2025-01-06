@@ -1,0 +1,45 @@
+<!-- templates/community/post_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}Community - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    {% for post in posts %}
+    <article class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center mb-4">
+            <img src="{{ post.author.profile_picture.url|default:'default_profile.png' }}" 
+                 alt="{{ post.author.username }}" 
+                 class="w-10 h-10 rounded-full mr-4">
+            <div>
+                <h2 class="text-xl font-semibold">{{ post.title }}</h2>
+                <p class="text-gray-600">Posted by {{ post.author.username }} 
+                   on {{ post.created_at|date:"F j, Y" }}</p>
+            </div>
+        </div>
+        
+        {% if post.image %}
+        <img src="{{ post.image.url }}" alt="{{ post.title }}" 
+             class="w-full rounded-lg mb-4">
+        {% endif %}
+        
+        <p class="text-gray-800 mb-4">{{ post.content|truncatewords:50 }}</p>
+        
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <button class="text-gray-600 hover:text-blue-500">
+                    <span>{{ post.likes.count }} Likes</span>
+                </button>
+                <span>{{ post.comments.count }} Comments</span>
+            </div>
+            <a href="{% url 'community:post_detail' post.pk %}" 
+               class="text-blue-500 hover:text-blue-600">
+                Read More
+            </a>
+        </div>
+    </article>
+    {% empty %}
+    <p class="text-gray-600">No posts yet.</p>
+    {% endfor %}
+</div>
+{% endblock %}
