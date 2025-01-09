@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto p-6">
+    <h2 class="text-2xl font-bold mb-6">My Bookings</h2>
+
+    {% if bookings %}
+        <div class="space-y-4">
+            {% for booking in bookings %}
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex justify-between">
+                        <div class="space-y-2">
+                            <div class="flex items-center space-x-2">
+                                <h3 class="text-lg font-semibold">{{ booking.service.title }}</h3>
+                                <span class="px-2 py-1 text-sm rounded-full
+                                    {% if booking.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                    {% elif booking.status == 'accepted' %}bg-green-100 text-green-800
+                                    {% elif booking.status == 'rejected' %}bg-red-100 text-red-800
+                                    {% elif booking.status == 'completed' %}bg-blue-100 text-blue-800
+                                    {% endif %}">
+                                    {{ booking.status|title }}
+                                </span>
+                            </div>
+                            <p class="text-gray-600">
+                                Booked for: {{ booking.booking_date|date:"F j, Y, g:i a" }}
+                            </p>
+                            <p class="text-gray-600">
+                                Booked on: {{ booking.created_at|date:"F j, Y, g:i a" }}
+                            </p>
+                            {% if booking.special_requests %}
+                                <div class="mt-3">
+                                    <p class="font-medium text-gray-700">Special Requests:</p>
+                                    <p class="text-gray-600">{{ booking.special_requests }}</p>
+                                </div>
+                            {% endif %}
+                            
+                            {% if booking.can_be_rated %}
+                                <div class="mt-4 p-4 bg-gray-50 rounded-md">
+                                    <h4 class="font-medium mb-2">Rate this service</h4>
+                                    <form class="rating-form" data-booking-id="{{ booking.id }}">
+                                        <div class="flex items-center space-x-1 mb-3">
+                                            {% for i in "12345" %}
+                                            <button type="button" 
+                                                    class="rating-star text-2xl text-gray-400 hover:text-yellow-400 focus:outline-none"
+                                                    data-rating="{{ forloop.counter }}">
+                                                ★
+                                            </button>
+                                            {% endfor %}
+                                        </div>
+                                        <textarea name="review" 
+                                                  class="w-full p-2 border rounded-md mb-2" 
+                                                  placeholder="Share your experience (optional)"></textarea>
+                                        <button type="submit" 
+                                                class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600">
+                                            Submit Rating
+                                        </button>
+                                    </form>
+                                </div>
+                            {% elif booking.rating %}
+                                <div class="mt-4 p-4 bg-gray-50 rounded-md">
+                                    <div class="flex items-center space-x-1 mb-2">
+                                        {% for i in "12345" %}
+                                        <span class="text-2xl {% if forloop.counter <= booking.rating %}text-yellow-400{% else %}text-gray-300{% endif %}">
+                                            ★
+                                        </span>
+                                        {% endfor %}
+                                    </div>
+                                    {% if booking.review %}
+                                        <p class="text-gray-600">{{ booking.review }}</p>
+                                    {% endif %}
+                                    <p class="text-sm text-gray-500 mt-1">
+                                        Rated on {{ booking.rated_at|date:"F j, Y" }}
+                                    </p>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if booking.status == 'pending' %}
+                            <button onclick="cancelBooking({{ booking.id }})"
+                                    class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">
+                                Cancel Booking
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="bg-white rounded-lg shadow-md p-6 text-center">
+            <p class="text-gray-600">You don't have any bookings yet.</p>
+            <a href="{% url 'services:list' %}" 
+               class="inline-block mt-4 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors">
+                Browse Services
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+{% block extra_js %}
+<script>
+    const csrfToken = '{{ csrf_token }}';
+</script>
+<script src="{% static 'js/ratings.js' %}"></script>
+{% endblock %}
+
+{% endblock %} 

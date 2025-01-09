@@ -1,117 +1,197 @@
-<nav class="bg-white shadow-lg">
+{% load static %}
+
+<nav class="bg-white border-b border-gray-100">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
+        <div class="flex justify-between h-20">
             <!-- Logo and primary nav -->
-            <div class="flex">
+            <div class="flex items-center">
                 <!-- Logo -->
                 <div class="flex-shrink-0 flex items-center">
-                    <a href="{% url 'core:home' %}" class="text-2xl font-bold text-green-600">
-                        GardenConnect
+                    <a href="{% url 'core:home' %}" class="flex items-center space-x-2">
+                        <i class="fas fa-leaf text-green-600 text-2xl"></i>
+                        <span class="text-xl font-bold bg-gradient-to-r from-green-600 to-green-400 bg-clip-text text-transparent">
+                            GardenConnect
+                        </span>
                     </a>
                 </div>
 
                 <!-- Primary Nav -->
-                <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                <div class="hidden lg:flex lg:items-center lg:ml-10 lg:space-x-8">
                     <a href="{% url 'services:list' %}" 
-                       class="inline-flex items-center px-1 pt-1 text-gray-500 hover:text-gray-900">
+                       class="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors duration-200 py-2 px-3 rounded-lg hover:bg-gray-50">
                         Services
                     </a>
                     {% if user.is_authenticated %}
                         {% if user.role == 'PROVIDER' %}
-                            <a href="{% url 'users:provider_dashboard' %}" 
-                               class="inline-flex items-center px-1 pt-1 text-gray-500 hover:text-gray-900">
+                            <a href="{% url 'users:provider-dashboard' %}" 
+                               class="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors duration-200 py-2 px-3 rounded-lg hover:bg-gray-50">
                                 Dashboard
                             </a>
+                            <a href="{% url 'bookings:requests' %}" 
+                               class="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors duration-200 py-2 px-3 rounded-lg hover:bg-gray-50">
+                                Booking Requests
+                            </a>
                         {% else %}
-                            <a href="#" 
-                               class="inline-flex items-center px-1 pt-1 text-gray-500 hover:text-gray-900">
+                            <a href="{% url 'bookings:my_bookings' %}" 
+                               class="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors duration-200 py-2 px-3 rounded-lg hover:bg-gray-50">
                                 My Bookings
                             </a>
                         {% endif %}
                     {% endif %}
+                    <a href="{% url 'community:post_list' %}" 
+                       class="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors duration-200 py-2 px-3 rounded-lg hover:bg-gray-50">
+                        Community
+                    </a>
                 </div>
             </div>
 
             <!-- Auth buttons -->
-            <div class="hidden sm:ml-6 sm:flex sm:items-center space-x-4">
+            <div class="hidden lg:flex lg:items-center lg:space-x-4">
                 {% if user.is_authenticated %}
-                    <span class="text-gray-700">Hello, {{ user.username }}</span>
-                    <form method="post" action="{% url 'users:logout' %}" class="inline">
-                        {% csrf_token %}
-                        <button type="submit" 
-                                class="bg-red-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-600">
-                            Logout
-                        </button>
-                    </form>
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-3 pr-4 border-r border-gray-200">
+                            <div class="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                                <i class="fas fa-user text-green-600"></i>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-sm font-medium text-gray-700">{{ user.username }}</span>
+                                {% if user.role == 'PROVIDER' %}
+                                    <a href="{% url 'users:provider-profile' %}" class="text-xs text-green-600 hover:text-green-700">Edit Profile</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <form method="post" action="{% url 'users:logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="text-sm font-medium text-gray-500 hover:text-gray-900">
+                                Logout
+                            </button>
+                        </form>
+                    </div>
                 {% else %}
                     <a href="{% url 'users:login' %}" 
-                       class="bg-green-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-600">
+                       class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900">
                         Login
                     </a>
                     <a href="{% url 'users:register' %}" 
-                       class="bg-blue-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-600">
-                        Register
+                       class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700">
+                        Get Started
                     </a>
                 {% endif %}
             </div>
 
             <!-- Mobile menu button -->
-            <div class="flex items-center sm:hidden">
+            <div class="flex items-center lg:hidden">
                 <button type="button" 
-                        class="mobile-menu-button inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+                        class="mobile-menu-button inline-flex items-center justify-center p-2 rounded-lg text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-green-500"
                         aria-controls="mobile-menu" 
                         aria-expanded="false">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
+                    <i class="fas fa-bars text-xl"></i>
                 </button>
             </div>
         </div>
     </div>
 
     <!-- Mobile menu -->
-    <div class="sm:hidden hidden" id="mobile-menu">
-        <div class="pt-2 pb-3 space-y-1">
-            <a href="{% url 'services:list' %}" 
-               class="block pl-3 pr-4 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50">
-                Services
-            </a>
-            {% if user.is_authenticated %}
-                {% if user.role == 'PROVIDER' %}
-                    <a href="{% url 'users:provider_dashboard' %}" 
-                       class="block pl-3 pr-4 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50">
-                        Dashboard
-                    </a>
-                {% else %}
-                    <a href="#" 
-                       class="block pl-3 pr-4 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50">
-                        My Bookings
-                    </a>
-                {% endif %}
-                <form method="post" action="{% url 'users:logout' %}" class="block pl-3 pr-4 py-2">
-                    {% csrf_token %}
-                    <button type="submit" 
-                            class="text-base font-medium text-gray-500 hover:text-gray-900">
-                        Logout
+    <div class="lg:hidden fixed inset-0 z-50 transform ease-in-out duration-300 {% if not mobile_menu_open %}translate-x-full{% endif %}" 
+         id="mobile-menu">
+        <!-- Semi-transparent backdrop -->
+        <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+        
+        <!-- Slide-over menu -->
+        <div class="absolute inset-y-0 right-0 w-full max-w-sm bg-white shadow-xl transform transition-transform duration-300 ease-in-out">
+            <!-- Header -->
+            <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-leaf text-green-600 text-xl"></i>
+                        <span class="text-lg font-bold bg-gradient-to-r from-green-600 to-green-400 bg-clip-text text-transparent">
+                            GardenConnect
+                        </span>
+                    </div>
+                    <button type="button" 
+                            class="mobile-menu-button p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <span class="sr-only">Close menu</span>
+                        <i class="fas fa-times text-xl"></i>
                     </button>
-                </form>
-            {% else %}
-                <a href="{% url 'users:login' %}" 
-                   class="block pl-3 pr-4 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50">
-                    Login
-                </a>
-                <a href="{% url 'users:register' %}" 
-                   class="block pl-3 pr-4 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50">
-                    Register
-                </a>
-            {% endif %}
+                </div>
+            </div>
+
+            <!-- Menu content -->
+            <div class="h-full overflow-y-auto">
+                <!-- Navigation Links -->
+                <nav class="px-6 pt-4 pb-6">
+                    <div class="grid gap-y-6">
+                        <a href="{% url 'services:list' %}" 
+                           class="flex items-center p-3 -mx-3 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                            <i class="fas fa-tools text-green-600 text-lg w-8"></i>
+                            <span class="text-base font-medium text-gray-900">Services</span>
+                        </a>
+                        
+                        {% if user.is_authenticated %}
+                            {% if user.role == 'PROVIDER' %}
+                                <a href="{% url 'users:provider-dashboard' %}" 
+                                   class="flex items-center p-3 -mx-3 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                                    <i class="fas fa-chart-line text-green-600 text-lg w-8"></i>
+                                    <span class="text-base font-medium text-gray-900">Dashboard</span>
+                                </a>
+                                <a href="{% url 'bookings:requests' %}" 
+                                   class="flex items-center p-3 -mx-3 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                                    <i class="fas fa-calendar-check text-green-600 text-lg w-8"></i>
+                                    <span class="text-base font-medium text-gray-900">Booking Requests</span>
+                                </a>
+                            {% else %}
+                                <a href="{% url 'bookings:my_bookings' %}" 
+                                   class="flex items-center p-3 -mx-3 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                                    <i class="fas fa-calendar text-green-600 text-lg w-8"></i>
+                                    <span class="text-base font-medium text-gray-900">My Bookings</span>
+                                </a>
+                            {% endif %}
+                        {% endif %}
+                        
+                        <a href="{% url 'community:post_list' %}" 
+                           class="flex items-center p-3 -mx-3 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                            <i class="fas fa-users text-green-600 text-lg w-8"></i>
+                            <span class="text-base font-medium text-gray-900">Community</span>
+                        </a>
+                    </div>
+                </nav>
+
+                <!-- User Section -->
+                <div class="border-t border-gray-200 px-6 py-6 mt-auto">
+                    {% if user.is_authenticated %}
+                        <div class="flex items-center mb-6">
+                            <div class="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                                <i class="fas fa-user text-green-600"></i>
+                            </div>
+                            <div class="ml-3">
+                                <span class="text-base font-medium text-gray-900">{{ user.username }}</span>
+                                {% if user.role == 'PROVIDER' %}
+                                    <a href="{% url 'users:provider-profile' %}" class="block text-sm text-green-600 hover:text-green-700">Edit Profile</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <form method="post" action="{% url 'users:logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="w-full flex items-center justify-center px-4 py-3 text-white bg-green-600 rounded-lg hover:bg-green-700">
+                                Logout
+                            </button>
+                        </form>
+                    {% else %}
+                        <div class="space-y-4">
+                            <a href="{% url 'users:login' %}" 
+                               class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50">
+                                Login
+                            </a>
+                            <a href="{% url 'users:register' %}" 
+                               class="w-full flex items-center justify-center px-4 py-3 text-white bg-green-600 rounded-lg hover:bg-green-700">
+                                Get Started
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
-</nav>
+</div>
 
-<script>
-    // Mobile menu toggle
-    document.querySelector('.mobile-menu-button').addEventListener('click', function() {
-        document.getElementById('mobile-menu').classList.toggle('hidden');
-    });
-</script>
+<script type="text/javascript" src="{% static 'js/navbar.js' %}"></script>

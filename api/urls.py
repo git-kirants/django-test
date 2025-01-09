@@ -15,4 +15,5 @@ urlpatterns = [
     path('provider/bookings/', 
          views.BookingViewSet.as_view({'get': 'list'}), 
          name='provider_bookings'),
+    path('bookings/<int:booking_id>/<str:action>/', views.update_booking_status, name='update_booking_status'),
 ] 

@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load form_tags %}
+{% block content %}
+<div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md mt-8">
+    <h2 class="text-2xl font-bold mb-8 text-center text-gray-800">Register as Service Provider</h2>
+    
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="space-y-2">
+            <label class="block text-sm font-medium text-gray-700" for="{{ field.id_for_label }}">
+                {{ field.label }}
+            </label>
+            {{ field|addclass:"w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500" }}
+            {% if field.errors %}
+            <p class="text-red-500 text-xs italic">{{ field.errors.0 }}</p>
+            {% endif %}
+            {% if field.help_text %}
+            <p class="text-gray-500 text-xs">{{ field.help_text }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition duration-200 font-medium">
+            Submit Application
+        </button>
+    </form>
+</div>
+{% endblock %}

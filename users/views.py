@@ -1,164 +1,174 @@
-# users/views.py
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, authenticate, logout
-from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from django.views.generic import ListView, UpdateView, TemplateView
-from django.urls import reverse_lazy
-from .forms import CustomerRegistrationForm, ProviderRegistrationForm, ProviderProfileForm, UserRegistrationForm
-from .models import User, ProviderApplication, ProviderProfile
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth import login, get_user_model
+from django.contrib.auth.decorators import login_required, user_passes_test
+from .forms import CustomerRegistrationForm, ProviderApplicationForm, ProviderProfileForm
+from .models import ProviderApplication, User, ProviderProfile
+from django.contrib.auth.hashers import make_password
+from django.contrib.messages import get_messages
 from services.models import Service
-from api.models import Booking
-from django.db.models import Avg
+from django.db.models import Avg, Prefetch
+from django.contrib.sites.shortcuts import get_current_site
+from django.template.loader import render_to_string
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.core.mail import EmailMessage
+from .tokens import account_activation_token
 
-def customer_register(request):
+def register(request):
     if request.method == 'POST':
         form = CustomerRegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, 'Registration successful!')
-            return redirect('home')
+            user = form.save(commit=False)
+            user.is_active = False  # Deactivate user until email is verified
+            user.save()
+
+            # Send verification email
+            current_site = get_current_site(request)
+            mail_subject = 'Activate your account'
+            message = render_to_string('users/account_activation_email.html', {
+                'user': user,
+                'domain': current_site.domain,
+                'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+                'token': account_activation_token.make_token(user),
+            })
+            email = EmailMessage(
+                mail_subject, message, to=[user.email]
+            )
+            email.send()
+
+            messages.success(request, 'Please check your email to complete the registration.')
+            return redirect('users:login')
     else:
         form = CustomerRegistrationForm()
     return render(request, 'users/register.html', {'form': form})
 
 def provider_register(request):
     if request.method == 'POST':
-        form = ProviderRegistrationForm(request.POST)
+        form = ProviderApplicationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            messages.success(
-                request, 
-                'Your provider application has been submitted and is pending review.'
-            )
-            return redirect('users:login')
+            application = form.save(commit=False)
+            application.password = make_password(form.cleaned_data['password'])
+            application.save()
+            messages.success(request, 'Your application has been submitted for review.')
+            return redirect('users:provider-pending')
     else:
-        form = ProviderRegistrationForm()
-    return render(request, 'users/provider_register.html', {'form': form})
+        form = ProviderApplicationForm()
+    return render(request, 'users/register_provider.html', {'form': form})
 
-@user_passes_test(lambda u: u.is_staff)
+@login_required
+@user_passes_test(lambda u: u.role == User.ADMIN)
 def provider_applications(request):
-    applications = ProviderApplication.objects.filter(status='pending').order_by('-submitted_at')
-    return render(request, 'users/provider_applications.html', {
-        'applications': applications
-    })
+    applications = ProviderApplication.objects.filter(status=ProviderApplication.STATUS_PENDING)
+    return render(request, 'users/provider_applications.html', {'applications': applications})
 
-@user_passes_test(lambda u: u.is_superuser)
+@login_required
+@user_passes_test(lambda u: u.role == User.ADMIN)
 def approve_provider(request, application_id):
     application = ProviderApplication.objects.get(id=application_id)
-    user = application.user
+    
+    # Create user account
+    User.objects.create(
+        username=application.username,
+        email=application.email,
+        password=application.password,  # Already hashed
+        role=User.PROVIDER
+    )
+    
+    # Update application status
+    application.status = ProviderApplication.STATUS_APPROVED
+    application.save()
+    
+    messages.success(request, f'Provider {application.business_name} has been approved.')
+    return redirect('users:provider-applications')
+
+@login_required
+@user_passes_test(lambda u: u.role == User.PROVIDER)
+def provider_dashboard(request):
+    profile, created = ProviderProfile.objects.get_or_create(user=request.user)
+    
+    # Get provider's services and filter active ones
+    services = Service.objects.filter(gardener=request.user)
+    active_services = services.filter(is_available=True)
+    
+    # Calculate average rating from bookings
+    average_rating = (services
+        .annotate(avg_rating=Avg('booking__rating'))
+        .aggregate(total_avg=Avg('avg_rating'))['total_avg'])
+    
+    # Calculate profile completion percentage
+    total_fields = 7
+    filled_fields = sum(bool(getattr(profile, field)) for field in 
+                       ['business_name', 'phone', 'address', 'description', 
+                        'services_offered', 'years_of_experience', 'website'])
+    profile_completion = int((filled_fields / total_fields) * 100)
+
+    context = {
+        'profile': profile,
+        'profile_completion': profile_completion,
+        'total_services': services.count(),
+        'active_services': active_services.count(),
+        'services': services,
+        'total_bookings': 0,  # Placeholder until bookings implemented
+        'average_rating': average_rating or 0,  # Default to 0 if no ratings
+        'recent_bookings': [], # Placeholder until bookings implemented
+    }
+    return render(request, 'users/provider_dashboard.html', context)
+
+@login_required
+def provider_profile(request):
+    profile, created = ProviderProfile.objects.get_or_create(user=request.user)
     
     if request.method == 'POST':
-        action = request.POST.get('action')
-        if action == 'approve':
-            user.is_approved = True
-            application.status = 'approved'
-            messages.success(request, f'Provider {user.username} has been approved.')
-        elif action == 'reject':
-            application.status = 'rejected'
-            messages.warning(request, f'Provider {user.username} has been rejected.')
-        
-        user.save()
-        application.admin_notes = request.POST.get('admin_notes', '')
-        application.save()
-        
-    return redirect('users:provider_applications')
-
-def login_view(request):
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        user = authenticate(request, username=username, password=password)
-        
-        if user is not None:
-            login(request, user)
-            return redirect('core:home')
-        else:
-            messages.error(request, 'Invalid username or password.')
-    
-    return render(request, 'users/login.html')
-
-class ProviderProfileView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
-    model = ProviderProfile
-    form_class = ProviderProfileForm
-    template_name = 'users/provider_profile.html'
-    success_url = reverse_lazy('users:provider_dashboard')
-
-    def test_func(self):
-        return self.request.user.role == User.Role.PROVIDER
-
-    def get_object(self):
-        profile, created = ProviderProfile.objects.get_or_create(
-            user=self.request.user
-        )
-        return profile
-
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        self.object.is_profile_completed = True
-        self.object.save()
-        messages.success(self.request, 'Profile updated successfully!')
-        return response
-
-class ProviderDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
-    template_name = 'users/provider_dashboard.html'
-
-    def test_func(self):
-        return self.request.user.role == User.Role.PROVIDER
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        user = self.request.user
-        
-        context['total_services'] = Service.objects.filter(gardener=user).count()
-        context['total_bookings'] = Booking.objects.filter(
-            service__gardener=user
-        ).count()
-        context['recent_bookings'] = Booking.objects.filter(
-            service__gardener=user
-        ).order_by('-created_at')[:5]
-        context['profile_completion'] = user.providerprofile.profile_completion_percentage()
-        
-        reviews = Review.objects.filter(service__gardener=user)
-        context['total_reviews'] = reviews.count()
-        context['average_rating'] = reviews.aggregate(
-            Avg('rating')
-        )['rating__avg'] or 0
-        
-        return context
-
-def check_application_status(request):
-    if not request.user.is_authenticated:
-        messages.error(request, 'Please login to check your application status.')
-        return redirect('users:login')
-    
-    try:
-        application = ProviderApplication.objects.get(user=request.user)
-        return render(request, 'users/application_status.html', {
-            'application': application
-        })
-    except ProviderApplication.DoesNotExist:
-        messages.info(request, 'You have not submitted a provider application yet.')
-        return redirect('users:provider_register')  # Redirect to provider registration instead of home
-
-def register_view(request):
-    if request.method == 'POST':
-        form = UserRegistrationForm(request.POST)
+        form = ProviderProfileForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, 'Registration successful!')
-            return redirect('core:home')
+            form.save()
+            messages.success(request, 'Profile updated successfully!')
+            return redirect('users:provider-dashboard')
     else:
-        form = UserRegistrationForm()
+        form = ProviderProfileForm(instance=profile)
     
-    return render(request, 'users/register.html', {'form': form})
+    return render(request, 'users/provider_profile.html', {'form': form})
 
-def logout_view(request):
-    if request.method == 'POST':
-        logout(request)
-        messages.success(request, 'You have been logged out successfully.')
-        return redirect('core:home')
-    return redirect('core:home')  # If someone tries to GET the logout URL
+def provider_details(request, provider_id):
+    User = get_user_model()
+    provider = get_object_or_404(User, id=provider_id, role='PROVIDER')
+    services = Service.objects.filter(gardener=provider, is_available=True)
+    
+    context = {
+        'provider': provider,
+        'services': services,
+    }
+    return render(request, 'users/provider_details.html', context)
+
+def provider_list(request):
+    User = get_user_model()
+    providers = User.objects.filter(
+        role='PROVIDER', 
+        is_active=True
+    ).prefetch_related(
+        'providerprofile',
+        'service_set'
+    )
+    
+    context = {
+        'providers': providers
+    }
+    return render(request, 'users/provider_list.html', context)
+
+def activate(request, uidb64, token):
+    User = get_user_model()
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+
+    if user is not None and account_activation_token.check_token(user, token):
+        user.is_active = True
+        user.save()
+        messages.success(request, 'Thank you for confirming your email. You can now login.')
+        return redirect('users:login')
+    else:
+        messages.error(request, 'Activation link is invalid or has expired!')
+        return redirect('users:register')

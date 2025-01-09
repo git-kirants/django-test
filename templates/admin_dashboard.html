@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-8">Admin Dashboard</h1>
+    
+    <!-- Users Section -->
+    <div class="mb-8">
+        <h2 class="text-xl font-semibold text-gray-700 mb-4">Users Overview</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-gray-600 text-sm font-medium">Total Users</h3>
+                <p class="text-2xl font-bold text-blue-600">{{ total_users }}</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-gray-600 text-sm font-medium">Active Users</h3>
+                <p class="text-2xl font-bold text-green-600">{{ active_users }}</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-gray-600 text-sm font-medium">New Users (30 days)</h3>
+                <p class="text-2xl font-bold text-purple-600">{{ new_users }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Services Section -->
+    <div class="mb-8">
+        <h2 class="text-xl font-semibold text-gray-700 mb-4">Services Overview</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-gray-600 text-sm font-medium">Total Services</h3>
+                <p class="text-2xl font-bold text-blue-600">{{ total_services }}</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-gray-600 text-sm font-medium">Active Services</h3>
+                <p class="text-2xl font-bold text-green-600">{{ active_services }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bookings Section -->
+    <div class="mb-8">
+        <h2 class="text-xl font-semibold text-gray-700 mb-4">Bookings Overview</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-gray-600 text-sm font-medium">Total Bookings</h3>
+                <p class="text-2xl font-bold text-blue-600">{{ total_bookings }}</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-gray-600 text-sm font-medium">Recent Bookings</h3>
+                <p class="text-2xl font-bold text-amber-600">{{ recent_bookings }}</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-gray-600 text-sm font-medium">Pending Bookings</h3>
+                <p class="text-2xl font-bold text-red-600">{{ pending_bookings }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Latest Bookings -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Latest Bookings</h2>
+            <div class="divide-y divide-gray-200">
+                {% for booking in latest_bookings %}
+                <div class="py-3">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="font-medium text-gray-800">{{ booking.user.username }}</p>
+                            <p class="text-sm text-gray-600">{{ booking.service.name }}</p>
+                        </div>
+                        <span class="text-sm text-gray-500">{{ booking.created_at|date }}</span>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-gray-500 text-sm">No recent bookings</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Latest Users -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">New Users</h2>
+            <div class="divide-y divide-gray-200">
+                {% for user in latest_users %}
+                <div class="py-3">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="font-medium text-gray-800">{{ user.username }}</p>
+                            <p class="text-sm text-gray-600">{{ user.email }}</p>
+                        </div>
+                        <span class="text-sm text-gray-500">{{ user.date_joined|date }}</span>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-gray-500 text-sm">No new users</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Add this section after your existing dashboard content -->
+    <div class="mb-8">
+        <h2 class="text-xl font-semibold text-gray-700 mb-4">Admin Actions</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Provider Applications -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-gray-600 text-sm font-medium mb-4">Provider Applications</h3>
+                <div class="space-y-4">
+                    {% for application in pending_applications %}
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <div>
+                            <p class="font-medium text-gray-800">{{ application.business_name }}</p>
+                            <p class="text-sm text-gray-600">{{ application.username }}</p>
+                        </div>
+                        <form method="post" action="{% url 'users:approve_provider' application.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                                Approve
+                            </button>
+                        </form>
+                    </div>
+                    {% empty %}
+                    <p class="text-gray-500">No pending applications</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

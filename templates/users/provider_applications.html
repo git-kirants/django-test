@@ -1,73 +1,31 @@
-<!-- templates/users/provider_applications.html -->
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mx-auto px-4">
+<div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
     <h2 class="text-2xl font-bold mb-6">Pending Provider Applications</h2>
     
-    {% if messages %}
-    <div class="mb-4">
-        {% for message in messages %}
-        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4">
-            {{ message }}
+    {% if applications %}
+        <div class="space-y-4">
+            {% for application in applications %}
+                <div class="border p-4 rounded-lg">
+                    <h3 class="font-bold">{{ application.business_name }}</h3>
+                    <p>Username: {{ application.username }}</p>
+                    <p>Email: {{ application.email }}</p>
+                    <p>Phone: {{ application.phone }}</p>
+                    <p>Address: {{ application.address }}</p>
+                    <p>Applied: {{ application.created_at|date:"M d, Y" }}</p>
+                    
+                    <form method="post" action="{% url 'users:approve-provider' application.id %}" class="mt-4">
+                        {% csrf_token %}
+                        <button type="submit" class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700">
+                            Approve Application
+                        </button>
+                    </form>
+                </div>
+            {% endfor %}
         </div>
-        {% endfor %}
-    </div>
+    {% else %}
+        <p>No pending applications.</p>
     {% endif %}
-    
-    {% for application in applications %}
-    <div class="bg-white rounded-lg shadow-md p-6 mb-4">
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-                <h3 class="text-xl font-semibold">{{ application.business_name }}</h3>
-                <p class="text-gray-600">
-                    Applicant: {{ application.user.get_full_name }}
-                </p>
-                <p class="text-gray-600">
-                    Experience: {{ application.experience_years }} years
-                </p>
-            </div>
-            <div>
-                <p class="font-medium">Business Description:</p>
-                <p class="text-gray-700">{{ application.business_description }}</p>
-            </div>
-        </div>
-        
-        <div class="mt-4">
-            <p class="font-medium">Certifications:</p>
-            <p class="text-gray-700">{{ application.certifications|default:"None" }}</p>
-        </div>
-        
-        <form method="post" 
-              action="{% url 'users:approve_provider' application.id %}" 
-              class="mt-4">
-            {% csrf_token %}
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700">
-                    Admin Notes
-                </label>
-                <textarea name="admin_notes" 
-                          class="mt-1 block w-full rounded-md border-gray-300" 
-                          rows="2"></textarea>
-            </div>
-            <div class="flex space-x-4">
-                <button type="submit" 
-                        name="action" 
-                        value="approve" 
-                        class="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600">
-                    Approve
-                </button>
-                <button type="submit" 
-                        name="action" 
-                        value="reject" 
-                        class="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600">
-                    Reject
-                </button>
-            </div>
-        </form>
-    </div>
-    {% empty %}
-    <p class="text-gray-600">No pending applications.</p>
-    {% endfor %}
 </div>
-{% endblock %}
+{% endblock %} 

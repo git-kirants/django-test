@@ -2,62 +2,91 @@
 
 {% block content %}
 <div class="container mx-auto px-4 py-6">
-    <div class="mb-6">
-        <h1 class="text-3xl font-bold">Provider Dashboard</h1>
-        {% if not user.providerprofile.is_profile_completed %}
-        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mt-4">
-            <p class="font-bold">Profile Incomplete</p>
-            <p>Please complete your profile to start offering services.</p>
-            <a href="{% url 'users:provider_profile' %}" 
-               class="text-blue-500 hover:text-blue-600">
-                Complete Profile
-            </a>
+    <div class="mb-8 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Provider Dashboard</h1>
+            <p class="mt-2 text-gray-600">Manage your services and bookings</p>
         </div>
-        {% endif %}
+        <a href="{% url 'users:provider-list' %}" 
+           class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+            </svg>
+            View All Providers
+        </a>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    {% if profile_completion < 100 %}
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mt-4">
+        <p class="font-bold">Profile Incomplete</p>
+        <p>Please complete your profile to start offering services.</p>
+        <a href="{% url 'users:provider-profile' %}" 
+           class="text-blue-500 hover:text-blue-600">
+            Complete Profile
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <!-- Profile Completion -->
         <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-gray-500 text-sm uppercase">Total Services</h3>
-            <p class="text-3xl font-bold">{{ total_services }}</p>
+            <h3 class="text-gray-500 text-sm font-medium">Profile Completion</h3>
+            <div class="flex items-center">
+                <div class="text-2xl font-bold text-gray-900">{{ profile_completion }}%</div>
+                <div class="ml-2 flex-shrink-0">
+                    {% if profile_completion < 100 %}
+                        <a href="{% url 'users:provider-profile' %}" class="text-sm text-blue-600 hover:text-blue-800">Complete Profile</a>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-        
+
+        <!-- Total Services -->
         <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-gray-500 text-sm uppercase">Total Bookings</h3>
-            <p class="text-3xl font-bold">{{ total_bookings }}</p>
+            <h3 class="text-gray-500 text-sm font-medium">Total Services</h3>
+            <div class="flex items-center">
+                <div class="text-2xl font-bold text-gray-900">{{ total_services }}</div>
+                <div class="ml-2 text-sm text-gray-600">({{ active_services }} active)</div>
+            </div>
         </div>
-        
+
+        <!-- Total Bookings -->
         <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-gray-500 text-sm uppercase">Average Rating</h3>
-            <p class="text-3xl font-bold">{{ average_rating|floatformat:1 }}/5.0</p>
+            <h3 class="text-gray-500 text-sm font-medium">Total Bookings</h3>
+            <div class="text-2xl font-bold text-gray-900">{{ total_bookings|default:"0" }}</div>
         </div>
-        
+
+        <!-- Average Rating -->
         <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-gray-500 text-sm uppercase">Profile Completion</h3>
-            <p class="text-3xl font-bold">{{ profile_completion }}%</p>
+            <h3 class="text-gray-500 text-sm font-medium">Average Rating</h3>
+            <div class="text-2xl font-bold text-gray-900">
+                {% if average_rating %}
+                    {{ average_rating|floatformat:1 }}
+                {% else %}
+                    No ratings yet
+                {% endif %}
+            </div>
         </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Recent Bookings -->
+        <!-- Profile Information -->
         <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-xl font-bold mb-4">Recent Bookings</h2>
-            <div class="space-y-4">
-                {% for booking in recent_bookings %}
-                <div class="border-b pb-4">
-                    <p class="font-semibold">{{ booking.service.title }}</p>
-                    <p class="text-sm text-gray-600">
-                        {{ booking.scheduled_date|date:"F j, Y" }} at 
-                        {{ booking.scheduled_time|time:"g:i A" }}
-                    </p>
-                    <p class="text-sm text-gray-500">
-                        Customer: {{ booking.customer.get_full_name }}
-                    </p>
-                </div>
-                {% empty %}
-                <p class="text-gray-500">No recent bookings.</p>
-                {% endfor %}
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Profile Information</h2>
+                <a href="{% url 'users:provider-profile' %}" 
+                   class="text-green-600 hover:text-green-700">
+                    Edit Profile
+                </a>
+            </div>
+            <div class="space-y-3">
+                <p><span class="font-semibold">Business Name:</span> {{ profile.business_name|default:"Not set" }}</p>
+                <p><span class="font-semibold">Phone:</span> {{ profile.phone|default:"Not set" }}</p>
+                <p><span class="font-semibold">Address:</span> {{ profile.address|default:"Not set" }}</p>
+                <p><span class="font-semibold">Years of Experience:</span> {{ profile.years_of_experience|default:"Not set" }}</p>
+                <p><span class="font-semibold">Website:</span> {{ profile.website|default:"Not set" }}</p>
             </div>
         </div>
 
@@ -65,20 +94,17 @@
         <div class="bg-white rounded-lg shadow p-6">
             <h2 class="text-xl font-bold mb-4">Quick Actions</h2>
             <div class="space-y-4">
+                <a href="{% url 'users:provider-profile' %}" 
+                   class="block w-full bg-green-500 text-white text-center py-2 px-4 rounded hover:bg-green-600">
+                    Update Profile
+                </a>
                 <a href="{% url 'services:create' %}" 
                    class="block w-full bg-blue-500 text-white text-center py-2 px-4 rounded hover:bg-blue-600">
                     Add New Service
                 </a>
-                <a href="{% url 'users:provider_profile' %}" 
-                   class="block w-full bg-green-500 text-white text-center py-2 px-4 rounded hover:bg-green-600">
-                    Update Profile
-                </a>
-                <a href="{% url 'bookings:calendar' %}" 
-                   class="block w-full bg-purple-500 text-white text-center py-2 px-4 rounded hover:bg-purple-600">
-                    View Calendar
-                </a>
+                <!-- Add more action buttons as needed -->
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
+{% endblock %} 

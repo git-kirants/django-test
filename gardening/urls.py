@@ -16,12 +16,26 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-  
+from django.conf import settings
+from django.conf.urls.static import static
+from . import views
+from django.contrib.auth import views as auth_views
+
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admink/', admin.site.urls),
+    path('dashboard/', include('dashboard.urls')),
     path('', include('core.urls')),
-    path('users/', include('users.urls')),
+    path('users/', include('users.urls', namespace='users')),
     path('services/', include('services.urls')),
     path('community/', include('community.urls')),
+    path('bookings/', include('bookings.urls')),
     path('api/', include('api.urls')),
-]
+    path('', include('django.contrib.auth.urls')),
+    path('admin/', include('users.urls', namespace='admin')),
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+# Add custom 404 handler
+handler404 = 'gardening.views.custom_404'
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from services.models import Service
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 class Booking(models.Model):
     STATUS_CHOICES = [
@@ -18,9 +19,19 @@ class Booking(models.Model):
     special_requests = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    rating = models.IntegerField(
+        null=True, 
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
+    review = models.TextField(blank=True)
+    rated_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ['-created_at']
 
     def __str__(self):
         return f"{self.customer.username} - {self.service.title} ({self.status})"
+
+    def can_be_rated(self):
+        return self.status == 'completed' and not self.rating
