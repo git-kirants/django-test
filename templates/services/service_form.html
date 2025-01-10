@@ -1,29 +1,226 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
+{% load form_tags %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto p-6">
-    <h2 class="text-2xl font-bold mb-6">{% if object %}Edit{% else %}Create New{% endif %} Service</h2>
+<div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md mt-8">
+    <h2 class="text-2xl font-bold mb-8 text-center text-gray-800">
+        {% if object %}Edit{% else %}Create New{% endif %} Service
+    </h2>
     
-    <form method="post" enctype="multipart/form-data" class="space-y-6">
+    <form method="post" enctype="multipart/form-data" class="space-y-6" novalidate>
         {% csrf_token %}
         
-        {{ form|crispy }}
-        
-        <div class="border-t pt-4">
-            <h3 class="text-lg font-semibold mb-3">Additional Images</h3>
-            {{ image_formset.management_form }}
-            {% for image_form in image_formset %}
-                <div class="mb-4">
-                    {{ image_form|crispy }}
+        {% for field in form %}
+        <div class="space-y-2">
+            {% if field.name == 'is_available' %}
+                <div class="flex items-center">
+                    {{ field|addclass:"h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded mr-2" }}
+                    <label class="text-sm font-medium text-gray-700" for="{{ field.id_for_label }}">
+                        {{ field.label }}
+                    </label>
                 </div>
-            {% endfor %}
+            {% else %}
+                <label class="block text-sm font-medium text-gray-700" for="{{ field.id_for_label }}">
+                    {{ field.label }}
+                </label>
+                {% if field.name == 'image' %}
+                    <div class="relative">
+                        {% if field.value %}
+                            <!-- Existing main image display -->
+                            <div class="flex items-center space-x-3">
+                                <span class="text-sm text-gray-600">{{ field.value.name|slice:"9:" }}</span>
+                                <label class="cursor-pointer p-1.5 bg-white border border-gray-300 rounded-md shadow-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    </svg>
+                                    <input type="file" 
+                                           name="{{ field.html_name }}" 
+                                           id="{{ field.auto_id }}"
+                                           class="hidden"
+                                           accept="image/*">
+                                </label>
+                            </div>
+                        {% else %}
+                            <!-- New main image upload -->
+                            <label class="w-full cursor-pointer inline-flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                Choose Image
+                                <input type="file" 
+                                       name="{{ field.html_name }}" 
+                                       id="{{ field.auto_id }}"
+                                       class="hidden"
+                                       accept="image/*">
+                            </label>
+                        {% endif %}
+                        <span class="mt-2 block text-sm text-gray-500 file-name"></span>
+                    </div>
+                {% else %}
+                    {{ field|addclass:"w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500" }}
+                {% endif %}
+            {% endif %}
+            {% if field.errors %}
+            <p class="text-red-500 text-xs italic">{{ field.errors.0 }}</p>
+            {% endif %}
+            {% if field.help_text %}
+            <p class="text-gray-500 text-xs">{{ field.help_text }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+        
+        <!-- Additional Images section -->
+        <div class="space-y-4">
+            <h3 class="block text-sm font-medium text-gray-700">Additional Images</h3>
+            
+            <!-- Container for all images (existing + new) -->
+            <div id="all-images-container" class="grid grid-cols-2 gap-4 mb-4">
+                <!-- Existing images -->
+                {% for service_image in object.serviceimage_set.all %}
+                <div class="relative group" data-existing-image>
+                    <img src="{{ service_image.image.url }}" alt="Service image" class="w-full h-32 object-cover rounded-lg">
+                    <a href="{% url 'services:delete-image' service_image.id %}" 
+                       class="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                       onclick="return confirm('Are you sure you want to delete this image?')">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Add new images section -->
+            <div class="space-y-4">
+                <!-- Explicitly render management form fields -->
+                <input type="hidden" name="serviceimage_set-TOTAL_FORMS" value="5" id="id_serviceimage_set-TOTAL_FORMS">
+                <input type="hidden" name="serviceimage_set-INITIAL_FORMS" value="0" id="id_serviceimage_set-INITIAL_FORMS">
+                <input type="hidden" name="serviceimage_set-MIN_NUM_FORMS" value="0" id="id_serviceimage_set-MIN_NUM_FORMS">
+                <input type="hidden" name="serviceimage_set-MAX_NUM_FORMS" value="5" id="id_serviceimage_set-MAX_NUM_FORMS">
+
+                <div id="additional-images-container">
+                    {% for form in image_formset.forms %}
+                        <div class="hidden">
+                            {{ form.id }}
+                            {{ form.image }}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Single Add Image button -->
+                <label class="w-full cursor-pointer inline-flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Add Images
+                    <input type="file" 
+                           id="add-images-input"
+                           class="hidden"
+                           accept="image/*"
+                           multiple>
+                </label>
+            </div>
+            <p id="max-images-warning" class="hidden text-red-500 text-sm mt-2">Maximum limit of images reached</p>
         </div>
 
-        <div class="flex justify-end space-x-4">
-            <a href="{% url 'services:list' %}" class="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100">Cancel</a>
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save Service</button>
+        <div class="flex space-x-4">
+            <a href="{% url 'services:list' %}" 
+               class="w-1/2 py-3 px-4 text-center border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition duration-200 font-medium">
+                Cancel
+            </a>
+            <button type="submit" name="submit" value="submit"
+                    class="w-1/2 bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition duration-200 font-medium">
+                {% if object %}Update{% else %}Create{% endif %} Service
+            </button>
         </div>
     </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const MAX_IMAGES = 5;
+    const addImagesInput = document.getElementById('add-images-input');
+    const allImagesContainer = document.getElementById('all-images-container');
+    const warning = document.getElementById('max-images-warning');
+    let currentImageCount = document.querySelectorAll('[data-existing-image]').length;
+
+    // Update UI based on current image count
+    function updateUI() {
+        if (currentImageCount >= MAX_IMAGES) {
+            addImagesInput.disabled = true;
+            warning.classList.remove('hidden');
+            warning.textContent = 'Maximum limit of images reached';
+        } else {
+            addImagesInput.disabled = false;
+            warning.classList.add('hidden');
+        }
+    }
+
+    // Initialize UI
+    updateUI();
+
+    addImagesInput.addEventListener('change', function(e) {
+        const files = Array.from(this.files);
+        const remainingSlots = MAX_IMAGES - currentImageCount;
+
+        if (files.length > remainingSlots) {
+            warning.classList.remove('hidden');
+            warning.textContent = `You can only add ${remainingSlots} more image${remainingSlots === 1 ? '' : 's'}`;
+            return;
+        }
+
+        files.forEach((file, index) => {
+            if (currentImageCount < MAX_IMAGES) {
+                // Create preview
+                const preview = document.createElement('div');
+                preview.className = 'relative group';
+                preview.innerHTML = `
+                    <img src="${URL.createObjectURL(file)}" class="w-full h-32 object-cover rounded-lg">
+                    <button type="button" class="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                `;
+
+                // Create formset input
+                const formsetInput = document.createElement('input');
+                formsetInput.type = 'file';
+                formsetInput.name = `serviceimage_set-${currentImageCount}-image`;
+                formsetInput.className = 'hidden';
+                formsetInput.id = `id_serviceimage_set-${currentImageCount}-image`;
+
+                // Add file to input
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                formsetInput.files = dataTransfer.files;
+
+                preview.appendChild(formsetInput);
+                allImagesContainer.appendChild(preview);
+
+                // Update management form
+                const totalForms = document.getElementById('id_serviceimage_set-TOTAL_FORMS');
+                totalForms.value = currentImageCount + 1;
+
+                currentImageCount++;
+
+                // Add remove functionality
+                preview.querySelector('button').addEventListener('click', function() {
+                    preview.remove();
+                    currentImageCount--;
+                    updateUI();
+                    
+                    // Update management form
+                    const totalForms = document.getElementById('id_serviceimage_set-TOTAL_FORMS');
+                    totalForms.value = currentImageCount;
+                });
+            }
+        });
+
+        updateUI();
+        this.value = '';
+    });
+});
+</script>
 {% endblock %} 

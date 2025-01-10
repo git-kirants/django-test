@@ -31,10 +31,15 @@
                                class="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors duration-200 py-2 px-3 rounded-lg hover:bg-gray-50">
                                 Booking Requests
                             </a>
-                        {% else %}
+                        {% elif user.role == 'CUSTOMER' %}
                             <a href="{% url 'bookings:my_bookings' %}" 
                                class="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors duration-200 py-2 px-3 rounded-lg hover:bg-gray-50">
                                 My Bookings
+                            </a>
+                        {% elif user.role == 'ADMIN' %}
+                            <a href="{% url 'dashboard:admin_dashboard' %}" 
+                               class="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors duration-200 py-2 px-3 rounded-lg hover:bg-gray-50">
+                                Admin Dashboard
                             </a>
                         {% endif %}
                     {% endif %}
@@ -139,11 +144,17 @@
                                     <i class="fas fa-calendar-check text-green-600 text-lg w-8"></i>
                                     <span class="text-base font-medium text-gray-900">Booking Requests</span>
                                 </a>
-                            {% else %}
+                            {% elif user.role == 'CUSTOMER' %}
                                 <a href="{% url 'bookings:my_bookings' %}" 
                                    class="flex items-center p-3 -mx-3 rounded-lg hover:bg-gray-50 transition-colors duration-200">
                                     <i class="fas fa-calendar text-green-600 text-lg w-8"></i>
                                     <span class="text-base font-medium text-gray-900">My Bookings</span>
+                                </a>
+                            {% elif user.role == 'ADMIN' %}
+                                <a href="{% url 'dashboard:admin_dashboard' %}" 
+                                   class="flex items-center p-3 -mx-3 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                                    <i class="fas fa-cog text-green-600 text-lg w-8"></i>
+                                    <span class="text-base font-medium text-gray-900">Admin Dashboard</span>
                                 </a>
                             {% endif %}
                         {% endif %}

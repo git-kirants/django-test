@@ -81,15 +81,7 @@
     </div>
 </div>
 
-{% if messages %}
-    {% for message in messages %}
-        <div class="mb-6 rounded-md {% if message.tags == 'error' %}bg-red-50{% else %}bg-green-50{% endif %} p-4">
-            <div class="text-sm {% if message.tags == 'error' %}text-red-700{% else %}text-green-700{% endif %}">
-                {{ message }}
-            </div>
-        </div>
-    {% endfor %}
-{% endif %}
+
 
 {% endblock %}
 

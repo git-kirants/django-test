@@ -49,8 +49,24 @@ def provider_register(request):
         if form.is_valid():
             application = form.save(commit=False)
             application.password = make_password(form.cleaned_data['password'])
+            application.is_active = False  # Deactivate until email is verified
             application.save()
-            messages.success(request, 'Your application has been submitted for review.')
+
+            # Send verification email
+            current_site = get_current_site(request)
+            mail_subject = 'Verify your email for provider application'
+            message = render_to_string('users/provider_activation_email.html', {
+                'application': application,
+                'domain': current_site.domain,
+                'uid': urlsafe_base64_encode(force_bytes(application.pk)),
+                'token': account_activation_token.make_token(application),
+            })
+            email = EmailMessage(
+                mail_subject, message, to=[application.email]
+            )
+            email.send()
+
+            messages.success(request, 'Please check your email to verify your application.')
             return redirect('users:provider-pending')
     else:
         form = ProviderApplicationForm()
@@ -62,25 +78,34 @@ def provider_applications(request):
     applications = ProviderApplication.objects.filter(status=ProviderApplication.STATUS_PENDING)
     return render(request, 'users/provider_applications.html', {'applications': applications})
 
+def is_admin(user):
+    return user.role == User.ADMIN
+
 @login_required
-@user_passes_test(lambda u: u.role == User.ADMIN)
+@user_passes_test(is_admin)
 def approve_provider(request, application_id):
-    application = ProviderApplication.objects.get(id=application_id)
-    
-    # Create user account
-    User.objects.create(
-        username=application.username,
-        email=application.email,
-        password=application.password,  # Already hashed
-        role=User.PROVIDER
-    )
-    
-    # Update application status
-    application.status = ProviderApplication.STATUS_APPROVED
-    application.save()
-    
-    messages.success(request, f'Provider {application.business_name} has been approved.')
-    return redirect('users:provider-applications')
+    if request.method == 'POST':
+        application = get_object_or_404(ProviderApplication, id=application_id, status=ProviderApplication.STATUS_PENDING)
+        try:
+            # Create user account with properly hashed password
+            user = User.objects.create_user(
+                username=application.username,
+                email=application.email,
+                role=User.PROVIDER
+            )
+            # Set the password separately to ensure proper hashing
+            user.set_password(application.password)
+            user.save()
+            
+            # Update application status
+            application.status = ProviderApplication.STATUS_APPROVED
+            application.save()
+            
+            messages.success(request, f'Provider application for {application.business_name} has been approved.')
+        except Exception as e:
+            messages.error(request, f'Error approving provider: {str(e)}')
+        
+        return redirect('dashboard:admin_dashboard')
 
 @login_required
 @user_passes_test(lambda u: u.role == User.PROVIDER)
@@ -172,3 +197,19 @@ def activate(request, uidb64, token):
     else:
         messages.error(request, 'Activation link is invalid or has expired!')
         return redirect('users:register')
+
+def activate_provider(request, uidb64, token):
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        application = ProviderApplication.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, ProviderApplication.DoesNotExist):
+        application = None
+
+    if application is not None and account_activation_token.check_token(application, token):
+        application.is_active = True
+        application.save()
+        messages.success(request, 'Thank you for verifying your email. Your application will be reviewed by an admin.')
+        return redirect('users:provider-pending')
+    else:
+        messages.error(request, 'Activation link is invalid or has expired!')
+        return redirect('users:provider-register')

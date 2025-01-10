@@ -17,6 +17,12 @@ class User(AbstractUser):
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default=CUSTOMER)
     email = models.EmailField(unique=True)
 
+    def save(self, *args, **kwargs):
+        # Check if this is a new user (no ID yet) and is_superuser is True
+        if not self.pk and self.is_superuser:
+            self.role = self.ADMIN
+        super().save(*args, **kwargs)
+
 class ProviderApplication(models.Model):
     STATUS_PENDING = 'PENDING'
     STATUS_APPROVED = 'APPROVED'
@@ -36,6 +42,7 @@ class ProviderApplication(models.Model):
     address = models.TextField()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=False)
     
     def __str__(self):
         return f"{self.business_name} - {self.status}"

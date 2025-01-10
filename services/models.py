@@ -40,7 +40,11 @@ class Service(models.Model):
 
 
 class ServiceImage(models.Model):
-    service = models.ForeignKey(Service, related_name='additional_images', on_delete=models.CASCADE)
+    service = models.ForeignKey(
+        Service, 
+        related_name='serviceimage_set',
+        on_delete=models.CASCADE
+    )
     image = models.ImageField(upload_to='services/')
     created_at = models.DateTimeField(auto_now_add=True)
 

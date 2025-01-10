@@ -75,13 +75,68 @@ class ServiceUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     template_name = 'services/service_form.html'
     success_url = reverse_lazy('services:list')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.POST:
+            context['image_formset'] = ServiceImageFormSet(
+                self.request.POST,
+                self.request.FILES,
+                instance=self.object
+            )
+        else:
+            context['image_formset'] = ServiceImageFormSet(instance=self.object)
+        return context
+
     def test_func(self):
         service = self.get_object()
         return self.request.user == service.gardener
 
+    @transaction.atomic
     def form_valid(self, form):
-        messages.success(self.request, 'Service updated successfully!')
-        return super().form_valid(form)
+        context = self.get_context_data()
+        image_formset = context['image_formset']
+        
+        # Debug prints
+        print("FILES in request:", self.request.FILES)
+        print("POST data:", self.request.POST)
+        
+        if image_formset.is_valid():
+            print("Formset is valid")
+            print("Formset cleaned data:", image_formset.cleaned_data)
+            
+            self.object = form.save()
+            image_formset.instance = self.object
+            image_formset.save()
+            
+            # Verify images were saved
+            print("Service images after save:", self.object.serviceimage_set.all())
+            
+            messages.success(self.request, 'Service updated successfully!')
+            return super().form_valid(form)
+        else:
+            print("Formset errors:", image_formset.errors)
+            print("Formset non form errors:", image_formset.non_form_errors())
+            return self.form_invalid(form)
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = self.get_form()
+        image_formset = ServiceImageFormSet(
+            self.request.POST,
+            self.request.FILES,
+            instance=self.object
+        )
+        
+        # Debug prints
+        print("POST method - FILES:", request.FILES)
+        print("POST method - POST data:", request.POST)
+        
+        if form.is_valid() and image_formset.is_valid():
+            return self.form_valid(form)
+        else:
+            print("Form errors:", form.errors)
+            print("Formset errors in post:", image_formset.errors)
+            return self.form_invalid(form)
 
 class ServiceDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Service
@@ -108,7 +163,7 @@ def service_details(request, service_id):
         'category': service.get_category_display(),
         'is_available': service.is_available,
         'image': service.image.url if service.image else None,
-        'additional_images': [img.image.url for img in service.additional_images.all()],
+        'additional_images': [img.image.url for img in service.serviceimage_set.all()],
         'gardener': {
             'id': service.gardener.id,
             'name': service.gardener.get_full_name() or service.gardener.username,
