@@ -1,0 +1,10 @@
+Application Update
+
+Dear {{ business_name }},
+
+Thank you for your interest in becoming a service provider on our platform. After careful review of your application, we regret to inform you that we are unable to approve your application at this time.
+
+You are welcome to apply again in the future with updated information.
+
+Best regards,
+The Team 

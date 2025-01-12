@@ -20,4 +20,5 @@ urlpatterns = [
     path('activate/<uidb64>/<token>/', views.activate, name='activate'),
     path('approve-provider/<int:provider_id>/', views.approve_provider, name='approve_provider'),
     path('activate-provider/<uidb64>/<token>/', views.activate_provider, name='activate-provider'),
+    path('reject-provider/<int:application_id>/', views.reject_provider, name='reject_provider'),
 ]

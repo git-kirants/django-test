@@ -115,15 +115,25 @@
                             <p class="font-medium text-gray-800">{{ application.business_name }}</p>
                             <p class="text-sm text-gray-600">{{ application.username }}</p>
                         </div>
-                        <form method="post" action="{% url 'users:approve_provider' application.id %}">
-                            {% csrf_token %}
-                            <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
-                                Approve
-                            </button>
-                        </form>
+                        <div class="flex space-x-2">
+                            <form method="post" action="{% url 'users:approve_provider' application.id %}" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" 
+                                        class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition duration-200">
+                                    Approve
+                                </button>
+                            </form>
+                            <form method="post" action="{% url 'users:reject_provider' application.id %}" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" 
+                                        class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition duration-200">
+                                    Reject
+                                </button>
+                            </form>
+                        </div>
                     </div>
                     {% empty %}
-                    <p class="text-gray-500">No pending applications</p>
+                    <p class="text-gray-500 text-center py-4">No pending applications</p>
                     {% endfor %}
                 </div>
             </div>

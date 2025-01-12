@@ -14,6 +14,8 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.core.mail import EmailMessage
 from .tokens import account_activation_token
+from django.core.mail import send_mail
+from django.conf import settings
 
 def register(request):
     if request.method == 'POST':
@@ -182,7 +184,6 @@ def provider_list(request):
     return render(request, 'users/provider_list.html', context)
 
 def activate(request, uidb64, token):
-    User = get_user_model()
     try:
         uid = force_str(urlsafe_base64_decode(uidb64))
         user = User.objects.get(pk=uid)
@@ -191,12 +192,14 @@ def activate(request, uidb64, token):
 
     if user is not None and account_activation_token.check_token(user, token):
         user.is_active = True
+        user.email_verified = True
         user.save()
-        messages.success(request, 'Thank you for confirming your email. You can now login.')
-        return redirect('users:login')
+        
+        return render(request, 'users/activation_success.html', {
+            'is_provider': hasattr(user, 'provider_profile')  # or however you identify providers
+        })
     else:
-        messages.error(request, 'Activation link is invalid or has expired!')
-        return redirect('users:register')
+        return render(request, 'users/activation_failed.html')
 
 def activate_provider(request, uidb64, token):
     try:
@@ -213,3 +216,36 @@ def activate_provider(request, uidb64, token):
     else:
         messages.error(request, 'Activation link is invalid or has expired!')
         return redirect('users:provider-register')
+
+@login_required
+@user_passes_test(is_admin)
+def reject_provider(request, application_id):
+    if request.method == 'POST':
+        application = get_object_or_404(ProviderApplication, id=application_id, status=ProviderApplication.STATUS_PENDING)
+        try:
+            # Update application status
+            application.status = ProviderApplication.STATUS_REJECTED
+            application.save()
+            
+            # Send rejection email
+            context = {
+                'business_name': application.business_name,
+            }
+            
+            email_html = render_to_string('users/emails/provider_rejected_email.html', context)
+            email_text = render_to_string('users/emails/provider_rejected_email.txt', context)
+            
+            send_mail(
+                subject='Update on Your Service Provider Application',
+                message=email_text,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[application.email],
+                html_message=email_html,
+                fail_silently=False,
+            )
+            
+            messages.success(request, f'Provider application for {application.business_name} has been rejected.')
+        except Exception as e:
+            messages.error(request, f'Error rejecting provider: {str(e)}')
+        
+        return redirect('dashboard:admin_dashboard')

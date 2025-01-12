@@ -1,0 +1,18 @@
+Welcome to Our Platform!
+
+Dear {{ business_name }},
+
+Great news! Your service provider application has been approved. You can now log in to your account and start offering your services on our platform.
+
+Next steps:
+- Log in to your account
+- Complete your provider profile
+- Add your services
+- Start accepting bookings
+
+Login here: {{ login_url }}
+
+If you have any questions, our support team is here to help.
+
+Best regards,
+The Team 
