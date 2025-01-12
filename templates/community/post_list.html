@@ -4,66 +4,71 @@
 
 {% block content %}
 <div class="max-w-4xl mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold">Community Posts</h1>
-        {% if user.is_authenticated %}
-        <a href="{% url 'community:post_create' %}" 
-           class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600">
-            Create New Post
-        </a>
-        {% endif %}
+    <div class="mb-8">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-4xl font-bold text-gray-800">Community Posts</h1>
+            {% if user.is_authenticated %}
+            <a href="{% url 'community:post_create' %}" 
+               class="bg-green-600 text-white px-6 py-2.5 rounded-lg hover:bg-green-700 transition duration-200 shadow-sm">
+                Create New Post
+            </a>
+            {% endif %}
+        </div>
+
+        <div class="relative">
+            <input type="text" 
+                   id="search-posts" 
+                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                   placeholder="Search posts..."
+                   autocomplete="off">
+            <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <i class="fas fa-search"></i>
+            </div>
+        </div>
     </div>
 
-    <div class="space-y-6">
-        {% for post in page_obj %}
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <div class="flex justify-between items-start">
-                <div>
-                    <h2 class="text-xl font-semibold mb-2">
-                        <a href="{% url 'community:post_detail' pk=post.pk %}" 
-                           class="text-green-600 hover:text-green-700">
-                            {{ post.title }}
-                        </a>
-                    </h2>
-                    <p class="text-gray-600 text-sm">
-                        Posted by {{ post.author.username }} on {{ post.created_at|date:"F j, Y" }}
-                    </p>
-                </div>
-                <div class="text-sm text-gray-500">
-                    {{ post.comments.count }} comment{{ post.comments.count|pluralize }}
-                </div>
-            </div>
-            <p class="mt-4 text-gray-700">{{ post.content|truncatewords:50 }}</p>
-            <div class="mt-4">
-                <a href="{% url 'community:post_detail' pk=post.pk %}" 
-                   class="text-green-600 hover:text-green-700">
-                    Read more →
-                </a>
-            </div>
-        </div>
-        {% empty %}
-        <div class="bg-white rounded-lg shadow-md p-6 text-center">
-            <p class="text-gray-600">No posts yet. Be the first to create one!</p>
-        </div>
-        {% endfor %}
+    <div id="posts-container" class="space-y-8">
+        {% include "community/includes/post_list_results.html" with posts=page_obj %}
     </div>
 
     {% if page_obj.has_other_pages %}
-    <div class="flex justify-center space-x-2 mt-8">
+    <div class="flex justify-center space-x-4 mt-12">
         {% if page_obj.has_previous %}
         <a href="?page={{ page_obj.previous_page_number }}" 
-           class="px-3 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
+           class="px-5 py-2.5 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition duration-200 font-medium">
             Previous
         </a>
         {% endif %}
 
         {% if page_obj.has_next %}
         <a href="?page={{ page_obj.next_page_number }}" 
-           class="px-3 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
+           class="px-5 py-2.5 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition duration-200 font-medium">
             Next
         </a>
         {% endif %}
     </div>
     {% endif %}
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-posts');
+    const postsContainer = document.getElementById('posts-container');
+    let searchTimeout;
+
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const query = this.value.trim();
+            
+            fetch(`{% url 'community:search_posts' %}?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    postsContainer.innerHTML = data.html;
+                })
+                .catch(error => console.error('Error:', error));
+        }, 300); // Debounce for 300ms
+    });
+});
+</script>
 {% endblock %}

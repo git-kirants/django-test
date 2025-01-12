@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.contrib.auth import login, get_user_model
+from django.contrib.auth import login, get_user_model, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from .forms import CustomerRegistrationForm, ProviderApplicationForm, ProviderProfileForm
 from .models import ProviderApplication, User, ProviderProfile
@@ -14,6 +14,8 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.core.mail import EmailMessage
 from .tokens import account_activation_token
+from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_http_methods
 
 def register(request):
     if request.method == 'POST':
@@ -213,3 +215,13 @@ def activate_provider(request, uidb64, token):
     else:
         messages.error(request, 'Activation link is invalid or has expired!')
         return redirect('users:provider-register')
+
+@never_cache
+@require_http_methods(["POST"])
+def logout_view(request):
+    logout(request)
+    response = redirect('core:home')  # Adjust the namespace if needed
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate, private'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response

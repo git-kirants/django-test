@@ -5,6 +5,9 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from .models import Post, Comment
 from .forms import PostForm, CommentForm
+from django.http import JsonResponse
+from django.template.loader import render_to_string
+from django.db.models import Q
 
 def post_list(request):
     posts = Post.objects.all()
@@ -94,3 +97,24 @@ def delete_comment(request, pk):
     comment.delete()
     messages.success(request, 'Comment deleted successfully!')
     return redirect('community:post_detail', pk=post_pk)
+
+def search_posts(request):
+    query = request.GET.get('q', '')
+    if query:
+        posts = Post.objects.filter(
+            Q(title__icontains=query) | 
+            Q(content__icontains=query)
+        ).order_by('-created_at')
+    else:
+        posts = Post.objects.all().order_by('-created_at')
+
+    html = render_to_string(
+        'community/includes/post_list_results.html',
+        {'posts': posts},
+        request=request
+    )
+    
+    return JsonResponse({
+        'html': html,
+        'count': posts.count()
+    })

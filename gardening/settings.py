@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'bookings',
     'users',
     'dashboard',
+    'utils',
 ]
 
 MIDDLEWARE = [
@@ -62,6 +63,7 @@ MIDDLEWARE = [
     'django.middleware.cache.UpdateCacheMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.cache.FetchFromCacheMiddleware',
+    'gardening.middleware.NoCacheMiddleware',
 ]
 
 ROOT_URLCONF = 'gardening.urls'

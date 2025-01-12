@@ -22,7 +22,7 @@ from . import views
 from django.contrib.auth import views as auth_views
 
 urlpatterns = [
-    path('admink/', admin.site.urls),
+    path('admin/', admin.site.urls),
     path('dashboard/', include('dashboard.urls')),
     path('', include('core.urls')),
     path('users/', include('users.urls', namespace='users')),
@@ -31,7 +31,7 @@ urlpatterns = [
     path('bookings/', include('bookings.urls')),
     path('api/', include('api.urls')),
     path('', include('django.contrib.auth.urls')),
-    path('admin/', include('users.urls', namespace='admin')),
+    path('administrator/', include('users.urls', namespace='administrator')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 # Add custom 404 handler
